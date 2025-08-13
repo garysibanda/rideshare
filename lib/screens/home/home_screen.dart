@@ -45,20 +45,57 @@ class HomeScreen extends StatelessWidget {
               
               const SizedBox(height: 32),
               
-              // Grid of containers
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                  childAspectRatio: 1.0,
+              // Custom grid layout with merged cards
+              Container(
+                height: 600, // Increased height to maintain bulk of page
+                child: Column(
+                  children: [
+                    // Top row - 2 regular cards
+                    Expanded(
+                      flex: 1,
+                      child: Row(
+                        children: [
+                          Expanded(child: _buildPlaceholderContainer(0)),
+                          const SizedBox(width: 16),
+                          Expanded(child: _buildPlaceholderContainer(1)),
+                        ],
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 16),
+                    
+                    // Middle and Bottom rows combined
+                    Expanded(
+                      flex: 2, // Double height for the large cards
+                      child: Row(
+                        children: [
+                          // Left side - 2 large cards stacked vertically
+                          Expanded(
+                            flex: 2,
+                            child: Column(
+                              children: [
+                                Expanded(
+                                  child: _buildLargePlaceholderContainer(2, "Featured Rides"),
+                                ),
+                                const SizedBox(height: 16),
+                                Expanded(
+                                  child: _buildLargePlaceholderContainer(4, "Quick Actions"),
+                                ),
+                              ],
+                            ),
+                          ),
+                          
+                          const SizedBox(width: 16),
+                          
+                          // Right side - One tall Ad Widget card
+                          Expanded(
+                            child: _buildAdWidget(),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                itemCount: 6, // Show 6 placeholder containers
-                itemBuilder: (context, index) {
-                  return _buildPlaceholderContainer(index);
-                },
               ),
               
               // Add some extra space at bottom for scrolling
@@ -250,6 +287,122 @@ class HomeScreen extends StatelessWidget {
                   fontSize: 12,
                   color: AppColors.textSecondary.withOpacity(0.7),
                   fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLargePlaceholderContainer(int index, String title) {
+    return GestureDetector(
+      onTap: () {
+        // TODO: Add functionality for each container
+        print('Large container $index ($title) tapped');
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.primary.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: AppColors.primary.withOpacity(0.3),
+            width: 2,
+          ),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.star,
+                size: 40,
+                color: AppColors.primary,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Tap to explore',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textSecondary.withOpacity(0.7),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAdWidget() {
+    return GestureDetector(
+      onTap: () {
+        print('Ad Widget tapped');
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppColors.primary.withOpacity(0.8),
+              AppColors.primary.withOpacity(0.6),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.campaign,
+                size: 48,
+                color: AppColors.white,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Ad Widget',
+                style: TextStyle(
+                  fontSize: 20,
+                  color: AppColors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Sponsored Content',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.white.withOpacity(0.9),
+                  fontWeight: FontWeight.w500,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Tap to learn more',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.white.withOpacity(0.8),
                 ),
               ),
             ],
