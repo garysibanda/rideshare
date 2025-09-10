@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../../utils/app_colors.dart';
 import '../../widgets/custom_button.dart';
@@ -59,6 +60,7 @@ class _PostRideScreenState extends State<PostRideScreen> {
                   ),
                 ),
                 const SizedBox(width: 16),
+                // Swap icon
                 Container(
                   padding: const EdgeInsets.all(8),
                   child: Icon(
@@ -438,20 +440,90 @@ class _PostRideScreenState extends State<PostRideScreen> {
   }
 
   void _postRide() {
-    print('Posting ride:');
-    print('From: $_fromLocation');
-    print('To: $_toLocation');
-    print('Date: ${_formatDate(_selectedDate)}');
-    print('Time: ${_formatTime(_selectedTime)}');
-    print('Seats: $_seatCount');
-    print('Price: \$$_price');
+    // Create JSON schema matching backend format exactly
+    final rideData = {
+      "startlocation": {
+        "coordinates": _getCoordinatesString(_fromLocation),
+        "address": {
+          "line1": "", // Will be filled by Google Maps API
+          "line2": "", // Will be filled by Google Maps API  
+          "city": _fromLocation,
+          "state": _getStateForCity(_fromLocation),
+          "zip": "" // Will be filled by Google Maps API
+        }
+      },
+      "endLocation": {
+        "coordinates": _getCoordinatesString(_toLocation),
+        "address": {
+          "line1": "", // Will be filled by Google Maps API
+          "line2": "", // Will be filled by Google Maps API
+          "city": _toLocation,
+          "state": _getStateForCity(_toLocation),
+          "zip": "" // Will be filled by Google Maps API
+        }
+      },
+      "customRadius": 10.0, // Default radius in miles/km
+      "tripTime": _getTripTimeString()
+    };
+
+    // Convert to JSON string
+    final jsonString = jsonEncode(rideData);
     
+    print('=== POST RIDE JSON FOR BACKEND (Schema 1.1.1.6.5) ===');
+    print(jsonString);
+    print('=== END JSON ===');
+    
+    // Show success message
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Ride posted successfully!'),
+        content: Text('Ride posted successfully! Check console for JSON.'),
         backgroundColor: AppColors.primary,
       ),
     );
+    
+    // TODO: Send to backend API
+    // _sendToBackend(rideData);
+  }
+
+  // Helper function to get coordinates as string format
+  String _getCoordinatesString(String city) {
+    final coordinates = {
+      'REXBURG': '43.8260,-111.7897',
+      'SLC': '40.7608,-111.8910',
+      'POCATELLO': '42.8746,-112.4455',
+      'IDAHO FALLS': '43.4666,-112.0340',
+      'PROVO': '40.2338,-111.6585',
+      'BOISE': '43.6150,-116.2023',
+    };
+    
+    return coordinates[city] ?? '0.0,0.0';
+  }
+
+  // Helper function to get state abbreviation
+  String _getStateForCity(String city) {
+    final cityStates = {
+      'REXBURG': 'ID',
+      'SLC': 'UT', 
+      'POCATELLO': 'ID',
+      'IDAHO FALLS': 'ID',
+      'PROVO': 'UT',
+      'BOISE': 'ID',
+    };
+    
+    return cityStates[city] ?? 'ID';
+  }
+
+  // Helper function to format trip time as ISO string
+  String _getTripTimeString() {
+    final tripDateTime = DateTime(
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+      _selectedTime.hour,
+      _selectedTime.minute,
+    );
+    
+    return tripDateTime.toIso8601String();
   }
 
   @override
