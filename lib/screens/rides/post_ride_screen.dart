@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../../utils/app_colors.dart';
 import '../../widgets/custom_button.dart';
+import './address_picker_screen.dart';
 
 class PostRideScreen extends StatefulWidget {
   const PostRideScreen({Key? key}) : super(key: key);
@@ -11,7 +12,9 @@ class PostRideScreen extends StatefulWidget {
 }
 
 class _PostRideScreenState extends State<PostRideScreen> {
-  String _fromLocation = 'REXBURG';
+  String _fromLocation = 'Select pickup location';
+  double? _fromLatitude;
+  double? _fromLongitude;
   String _toLocation = 'SLC';
   DateTime _selectedDate = DateTime(2025, 5, 23);
   TimeOfDay _selectedTime = const TimeOfDay(hour: 9, minute: 0);
@@ -53,11 +56,7 @@ class _PostRideScreenState extends State<PostRideScreen> {
             Row(
               children: [
                 Expanded(
-                  child: _buildLocationSelector(
-                    label: 'FROM:',
-                    value: _fromLocation,
-                    onTap: () => _showLocationPicker(true),
-                  ),
+                  child: _buildFromLocationInput(),
                 ),
                 const SizedBox(width: 16),
                 // Swap icon
@@ -190,6 +189,60 @@ class _PostRideScreenState extends State<PostRideScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildFromLocationInput() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'FROM:',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+            letterSpacing: 1.2,
+          ),
+        ),
+        const SizedBox(height: 8),
+        GestureDetector(
+          onTap: _openAddressPicker,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: AppColors.inputBackground,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.location_on,
+                  color: AppColors.textSecondary,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _fromLocation,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: _fromLocation == 'Select pickup location' 
+                          ? AppColors.textSecondary 
+                          : AppColors.textPrimary,
+                    ),
+                  ),
+                ),
+                Icon(
+                  Icons.search,
+                  color: AppColors.textSecondary,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -350,6 +403,26 @@ class _PostRideScreenState extends State<PostRideScreen> {
     );
   }
 
+  void _openAddressPicker() async {
+    final result = await Navigator.push<Map<String, dynamic>>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddressPickerScreen(
+          initialAddress: _fromLocation != 'Select pickup location' ? _fromLocation : null,
+          title: 'Select Pickup Location',
+        ),
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        _fromLocation = result['address'] as String;
+        _fromLatitude = result['latitude'] as double;
+        _fromLongitude = result['longitude'] as double;
+      });
+    }
+  }
+
   void _showLocationPicker(bool isFrom) {
     final locations = ['REXBURG', 'SLC', 'POCATELLO', 'IDAHO FALLS', 'PROVO', 'BOISE'];
     
@@ -445,9 +518,9 @@ class _PostRideScreenState extends State<PostRideScreen> {
       "startlocation": {
         "coordinates": _getCoordinatesString(_fromLocation),
         "address": {
-          "line1": "", // Will be filled by Google Maps API
+          "line1": _fromLatitude != null ? _fromLocation.split(',').first : "", // Use actual address
           "line2": "", // Will be filled by Google Maps API  
-          "city": _fromLocation,
+          "city": _getCity(_fromLocation),
           "state": _getStateForCity(_fromLocation),
           "zip": "" // Will be filled by Google Maps API
         }
@@ -487,6 +560,12 @@ class _PostRideScreenState extends State<PostRideScreen> {
 
   // Helper function to get coordinates as string format
   String _getCoordinatesString(String city) {
+    // If we have coordinates from the address picker, use those
+    if (_fromLatitude != null && _fromLongitude != null && city == _fromLocation) {
+      return '$_fromLatitude,$_fromLongitude';
+    }
+    
+    // Fallback to hardcoded coordinates for predefined cities
     final coordinates = {
       'REXBURG': '43.8260,-111.7897',
       'SLC': '40.7608,-111.8910',
@@ -497,6 +576,20 @@ class _PostRideScreenState extends State<PostRideScreen> {
     };
     
     return coordinates[city] ?? '0.0,0.0';
+  }
+
+  // Helper function to extract city from address
+  String _getCity(String address) {
+    // If it's a full address, try to extract city (usually after the first comma)
+    if (_fromLatitude != null && address.contains(',')) {
+      final parts = address.split(',');
+      if (parts.length >= 2) {
+        return parts[1].trim();
+      }
+    }
+    
+    // Fallback to the address itself or empty string
+    return address.replaceAll('Select pickup location', '');
   }
 
   // Helper function to get state abbreviation
